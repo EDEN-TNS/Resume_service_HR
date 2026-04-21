@@ -45,7 +45,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/resume-service-hr
+          images: ghcr.io/${{ toLower(github.repository_owner) }}/resume-service-hr
           tags: |
             type=sha
             type=raw,value=main,enable={{is_default_branch}}
@@ -61,7 +61,7 @@ jobs:
 
       - name: Set image ref for verification
         run: |
-          echo "IMAGE=ghcr.io/${{ github.repository_owner }}/resume-service-hr:sha-${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_ENV"
+          echo "IMAGE=ghcr.io/${{ toLower(github.repository_owner) }}/resume-service-hr:sha-${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_ENV"
 
       - name: Check fixture exists
         run: |
@@ -71,18 +71,23 @@ jobs:
       - name: Run container
         run: |
           set -euo pipefail
-          docker run -d --name resume-service-hr-ci -p 8700:8000 \
+          docker rm -f resume-service-hr-ci >/dev/null 2>&1 || true
+          docker run -d --name resume-service-hr-ci -p 0:8000 \
             -e DEBUG_MODE=false \
             -e MOCK_HR_PROCESSOR=true \
             -e VLLM_URL=http://example.invalid \
             -e VLLM_MODEL=dummy \
             "$IMAGE"
+          
+          PORT="$(docker port resume-service-hr-ci 8000/tcp | python3 -c "import sys; s=sys.stdin.read().strip(); print(s.rsplit(':', 1)[-1])")"
+          test -n "$PORT"
+          echo "PORT=$PORT" >> "$GITHUB_ENV"
 
       - name: Wait for health
         run: |
           set -euo pipefail
           for i in $(seq 1 60); do
-            if curl -fsS "http://localhost:8700/health" >/dev/null; then
+            if curl -fsS "http://localhost:${PORT}/health" >/dev/null; then
               echo "healthy"
               exit 0
             fi
@@ -96,10 +101,10 @@ jobs:
         run: |
           set -euo pipefail
 
-          curl -fsS "http://localhost:8700/health" \
+          curl -fsS "http://localhost:${PORT}/health" \
             | python -c "import sys, json; d=json.load(sys.stdin); assert d['status']=='healthy'"
 
-          curl -fsS -X POST "http://localhost:8700/test_resume/" \
+          curl -fsS -X POST "http://localhost:${PORT}/test_resume/" \
             -F "file=@tests/fixtures/ci_sample.pdf;type=application/pdf" \
             | python -c "import sys, json; d=json.load(sys.stdin); assert d.get('status')=='ok'"
 
