@@ -1,8 +1,8 @@
 import re
+
 from rapidfuzz import fuzz
-from src.utils.global_logger import info, debug
 
-
+from src.utils.global_logger import debug, info
 
 
 def _is_bullet_line(s: str) -> bool:

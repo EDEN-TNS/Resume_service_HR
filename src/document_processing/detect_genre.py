@@ -1,5 +1,6 @@
 import re
 
+
 def contains_korean(text):
     """
     Detects if the given text contains any Korean characters.

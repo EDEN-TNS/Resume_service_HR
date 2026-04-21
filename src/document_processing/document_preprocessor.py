@@ -3,21 +3,28 @@ import shutil
 import subprocess
 import tempfile
 import time
-from typing import Dict, Tuple, Optional
-from fastapi import UploadFile
-from PIL import Image
+from typing import Dict, Optional, Tuple
+
 import pdfplumber
 import pypdf
+from fastapi import UploadFile
+from PIL import Image
 
+from src.document_processing.detect_genre import detect_genre
 from src.document_processing.docling_processing import process_document
 from src.document_processing.ocr_processing import _safe_ocr, inject_image_ocr
 from src.document_processing.remember_format import extract_remember
-from src.document_processing.detect_genre import detect_genre
-from src.text_processing.text_preprocessing_ko import remove_long_paragraphs_by_sentences_ocr
-from src.text_processing.text_preprocessing_eng import remove_sections_journal, extract_sections_journal_result
-from src.text_processing.text_preprocessing_ko import extract_sections_korean_result, remove_sections_korean
+from src.text_processing.text_preprocessing_eng import (
+    extract_sections_journal_result,
+    remove_sections_journal,
+)
+from src.text_processing.text_preprocessing_ko import (
+    extract_sections_korean_result,
+    remove_long_paragraphs_by_sentences_ocr,
+    remove_sections_korean,
+)
 from src.utils.debug_file import save_markdown_result
-from src.utils.global_logger import info, debug, warning, error
+from src.utils.global_logger import debug, error, info, warning
 
 
 def convert_doc_to_docx(input_path: str) -> str:
@@ -307,7 +314,7 @@ class DocumentPreprocessor:
                         img.close()
                 except Exception:
                     pass
-            debug(f"✅ OCR 처리 완료, 모든 이미지 파일 닫힘")
+            debug("✅ OCR 처리 완료, 모든 이미지 파일 닫힘")
         
         # # 마크다운 파일로 저장
         # if text_with_ocr:
@@ -335,7 +342,6 @@ class DocumentPreprocessor:
                 warning(f"⚠️ Initial PDF extraction failed: {str(processing_error)}")
 
                 import os
-                from typing import Optional
 
                 # 변환된 PDF를 저장할 별도 폴더
                 converted_pdf_dir = "./converted_pdfs"

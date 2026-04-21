@@ -1,12 +1,12 @@
-from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
+import threading
+from pathlib import Path
+
 from docling.datamodel.base_models import InputFormat
 from docling.datamodel.pipeline_options import PdfPipelineOptions
 from docling.document_converter import DocumentConverter, PdfFormatOption
 from docling_core.types.doc import ImageRefMode
-from pathlib import Path
-import os
-import threading
-from src.utils.global_logger import info, debug
+
+from src.utils.global_logger import debug, info
 
 # ✅ UI 서버가 저장하는 아티팩트 폴더와 유사한 개념으로, 로컬에서도 고정 경로 사용
 ARTIFACTS_DIR = Path("./artifacts")      # 필요시 절대경로로

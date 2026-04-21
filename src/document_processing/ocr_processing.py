@@ -1,18 +1,16 @@
 import base64
+import imghdr
 import io
-import json
 import os
 import re
-import subprocess
-import tempfile
-import time
 import warnings
-import torch
-import imghdr
-from PIL import Image, ImageFile
-import easyocr
+
 import numpy as np
-from src.utils.global_logger import info, debug, warning
+import torch
+from PIL import Image, ImageFile
+
+import easyocr
+from src.utils.global_logger import debug, info, warning
 from src.utils.http_client import get_http_client
 
 # 손상된 이미지 파일도 로드할 수 있도록 설정
@@ -155,7 +153,6 @@ async def _ocr_with_chandra(image_bytes: bytes, timeout: float = 600) -> str:
     이미지 1장을 Chandra-OCR(vLLM Vision)로 보내 '순수 텍스트'만 받아온다.
     - 결과는 프롬프트에 붙일 OCR 텍스트로 사용.
     """
-    import os
     CHANDRA_API_BASE = os.environ.get("CHANDRA_OCR_URL", "http://192.168.14.248:18000/v1")
     CHANDRA_MODEL = "chandra"
     data_url = _to_data_url(image_bytes)

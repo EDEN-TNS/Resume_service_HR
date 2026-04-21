@@ -1,12 +1,14 @@
-import json
-import io
 import base64
 import imghdr
+import io
+import json
 import os
 from typing import Any, Dict, List
-from PIL import Image
+
 import httpx
-from src.document_processing.ocr_processing import _safe_ocr, _ocr_with_chandra
+from PIL import Image
+
+from src.document_processing.ocr_processing import _ocr_with_chandra, _safe_ocr
 from src.llm_extraction.verify_prompts import DocumentPrompts
 from src.utils.http_client import get_http_client
 
@@ -311,7 +313,7 @@ OCR EXTRACTED TEXT:
         
         # 핵심: choices가 없으면 에러 반환
         if not choices:
-            print(f"  ❌ [chandra-ocr] LLM 응답에 choices 없음")
+            print("  ❌ [chandra-ocr] LLM 응답에 choices 없음")
             return {
                 "error": "LLM response has no choices",
                 "raw_result": result,
@@ -327,7 +329,7 @@ OCR EXTRACTED TEXT:
         
         # 핵심: 응답 텍스트가 비어있으면 에러 반환
         if not response_text or len(response_text.strip()) == 0:
-            print(f"  ❌ [chandra-ocr] LLM 응답 텍스트 비어있음")
+            print("  ❌ [chandra-ocr] LLM 응답 텍스트 비어있음")
             return {
                 "error": "LLM response text is empty",
                 "raw_result": result,
@@ -351,7 +353,7 @@ OCR EXTRACTED TEXT:
                 json_str = json_str.replace("\\_", "_").replace("\\/", "/")
                 data = json.loads(json_str)
             else:
-                print(f"  ⚠️ [chandra-ocr] JSON 구조 없음, raw_response 반환")
+                print("  ⚠️ [chandra-ocr] JSON 구조 없음, raw_response 반환")
                 data = {"raw_response": response_text}
         except json.JSONDecodeError as e:
             print(f"  ⚠️ [chandra-ocr] JSON 파싱 실패: {str(e)}")

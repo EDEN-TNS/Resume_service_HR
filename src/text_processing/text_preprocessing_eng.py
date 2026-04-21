@@ -1,5 +1,6 @@
 from rapidfuzz import fuzz
-from src.utils.global_logger import info, debug
+
+from src.utils.global_logger import debug
 
 remove_sections = {
     "journal": [
@@ -296,12 +297,11 @@ def remove_sections_journal(markdown_text, **kwargs):
         
         # 테이블 형식의 섹션 헤더 처리 (|로 시작하는 경우)
         if cleaned_text.startswith('|') and '|' in cleaned_text[1:]:
-            original_cleaned = cleaned_text
             # 첫 번째 |와 두 번째 | 사이의 내용 추출
             parts = cleaned_text.split('|')
             if len(parts) >= 2:
                 cleaned_text = parts[1].strip()  # 첫 번째 | 다음 부분
-            # print(f"🗑️ 테이블 헤더 처리: '{original_cleaned}' -> '{cleaned_text}'")
+            # print(f"🗑️ 테이블 헤더 처리: '{cleaned_text}'")
         
         # 타겟 섹션과 매칭 확인
         for section in sections_to_remove:
@@ -433,12 +433,11 @@ def extract_sections_journal_result(markdown_text, **kwargs):
         
         # 테이블 형식의 섹션 헤더 처리 (|로 시작하는 경우)
         if cleaned_text.startswith('|') and '|' in cleaned_text[1:]:
-            original_cleaned = cleaned_text
             # 첫 번째 |와 두 번째 | 사이의 내용 추출
             parts = cleaned_text.split('|')
             if len(parts) >= 2:
                 cleaned_text = parts[1].strip()  # 첫 번째 | 다음 부분
-            # print(f"🔍 테이블 헤더 처리: '{original_cleaned}' -> '{cleaned_text}'")
+            # print(f"🔍 테이블 헤더 처리: '{cleaned_text}'")
         
         # 타겟 섹션과 매칭 확인
         for section in target_sections:

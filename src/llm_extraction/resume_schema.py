@@ -10,7 +10,6 @@ from typing import Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field
 
-
 # --- Resume: flat snake_case (고정 항목만) ---
 
 class BasicInfoBlock(BaseModel):

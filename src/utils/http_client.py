@@ -6,8 +6,9 @@ httpx.AsyncClient를 싱글톤으로 관리하여 커넥션 풀 재사용
 - 커넥션 풀 관리로 리소스 효율성 개선
 """
 
-import httpx
 from typing import Optional
+
+import httpx
 
 
 class HTTPClientManager:

@@ -6,7 +6,7 @@
 - 문서 특성을 반영한 상세 프롬프트
 """
 
-from typing import Dict, List
+from typing import List
 
 
 class DocumentPrompts:
