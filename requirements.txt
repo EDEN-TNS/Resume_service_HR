@@ -1,0 +1,16 @@
+fastapi
+pydantic>=2.0
+uvicorn[standard]
+python-multipart
+docling==2.47.1
+httpx
+pdfplumber
+Pillow
+msoffcrypto-tool
+tiktoken
+pypdf
+pikepdf
+pypdfium2
+rapidfuzz
+pytest
+ruff

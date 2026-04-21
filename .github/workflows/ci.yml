@@ -1,0 +1,53 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Set up uv
+        uses: astral-sh/setup-uv@v4
+        with:
+          enable-cache: true
+
+      - name: Install dependencies
+        run: |
+          uv pip install --system -r requirements.txt
+
+      - name: Import check
+        env:
+          DEBUG_MODE: "false"
+          VLLM_URL: "http://example.invalid"
+          VLLM_MODEL: "dummy"
+          MOCK_HR_PROCESSOR: "true"
+        run: |
+          python -c "import src.api.main; print('import ok')"
+
+      - name: API integration tests (mocked)
+        env:
+          DEBUG_MODE: "false"
+          VLLM_URL: "http://example.invalid"
+          VLLM_MODEL: "dummy"
+          MOCK_HR_PROCESSOR: "true"
+        run: |
+          pytest -q
+
+      - name: Lint (ruff)
+        run: |
+          ruff check src tests

@@ -1,0 +1,49 @@
+services:
+  # API 서버 (test_resume 전용, RabbitMQ 없음)
+  resume-api-hr:
+    # build: .
+    image: oneresume-core:v1.0.0
+    container_name: resume-api-hr
+    runtime: nvidia
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    ports:
+      - "8700:8000"
+    restart: unless-stopped
+    volumes:
+      - ./artifacts:/home/appuser/.cache/docling/models
+      - ./cache:/root/.cache/
+      - ./easyocr:/root/.EasyOCR/
+      - ./markdown_result:/app/markdown_result
+      - ./src:/app/src
+      - ./swagger_ui:/app/static
+      - ./requirements.txt:/app/requirements.txt
+      - ./images:/app/images
+      - ./debug_logs:/app/debug_logs
+    env_file:
+      - ./.env
+    environment:
+      - DEBUG_MODE=${DEBUG_MODE:-false}
+      - VLLM_URL=${VLLM_URL}
+      - VLLM_MODEL=${VLLM_MODEL}
+      - LANG=${LANG:-ko_KR.UTF-8}
+      - LC_ALL=${LC_ALL:-ko_KR.UTF-8}
+      - DEBUG=${DEBUG:-false}
+      - PYTHONIOENCODING=${PYTHONIOENCODING:-utf-8}
+      - PYTHONUTF8=${PYTHONUTF8:-1}
+    command: python -m src.api.main
+    networks:
+      - resume-hr
+
+# Docker 데몬 기본 주소 풀이 고갈된 경우(fully subnetted), 자동 할당 대신 고정 서브넷 사용
+networks:
+  resume-hr:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.250.0.0/24
