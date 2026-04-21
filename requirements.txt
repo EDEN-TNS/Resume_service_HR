@@ -13,4 +13,4 @@ pikepdf
 pypdfium2
 rapidfuzz
 pytest
-ruff
+ruff==0.15.11
