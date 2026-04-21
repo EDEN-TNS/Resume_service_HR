@@ -41,11 +41,16 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Normalize image namespace (lowercase)
+        run: |
+          set -euo pipefail
+          echo "OWNER_LC=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_ENV"
+
       - name: Extract Docker metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ toLower(github.repository_owner) }}/resume-service-hr
+          images: ghcr.io/${{ env.OWNER_LC }}/resume-service-hr
           tags: |
             type=sha
             type=raw,value=main,enable={{is_default_branch}}
@@ -61,7 +66,7 @@ jobs:
 
       - name: Set image ref for verification
         run: |
-          echo "IMAGE=ghcr.io/${{ toLower(github.repository_owner) }}/resume-service-hr:sha-${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_ENV"
+          echo "IMAGE=ghcr.io/${{ env.OWNER_LC }}/resume-service-hr:sha-${{ github.event.workflow_run.head_sha }}" >> "$GITHUB_ENV"
 
       - name: Check fixture exists
         run: |
