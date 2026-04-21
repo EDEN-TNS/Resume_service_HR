@@ -16,7 +16,6 @@ from src.utils.http_client import get_http_client
 # 손상된 이미지 파일도 로드할 수 있도록 설정
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-# PyTorch RNN 모듈의 메모리 경고 필터링 (EasyOCR 내부 사용으로 인한 경고)
 warnings.filterwarnings("ignore", message="RNN module weights are not part of single contiguous chunk of memory")
 
 # ------------------------------
