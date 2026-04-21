@@ -5,11 +5,11 @@ import os
 import re
 import warnings
 
+import easyocr
 import numpy as np
 import torch
 from PIL import Image, ImageFile
 
-import easyocr
 from src.utils.global_logger import debug, info, warning
 from src.utils.http_client import get_http_client
 
