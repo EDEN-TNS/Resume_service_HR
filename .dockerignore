@@ -44,6 +44,10 @@ ENV/
 .DS_Store
 Thumbs.db
 
+# Secrets
+.env
+.env.*
+
 # Uploads directory
 uploads/ 
 

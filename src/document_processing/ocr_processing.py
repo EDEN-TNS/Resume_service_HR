@@ -5,13 +5,11 @@ import os
 import re
 import warnings
 
-import easyocr
 import numpy as np
-import torch
 from PIL import Image, ImageFile
 
+import easyocr
 from src.utils.global_logger import debug, info, warning
-from src.utils.http_client import get_http_client
 
 # 손상된 이미지 파일도 로드할 수 있도록 설정
 ImageFile.LOAD_TRUNCATED_IMAGES = True
@@ -80,13 +78,9 @@ def _cleanup_gpu_memory():
     """
     GPU 메모리 정리
     """
-    try:
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-            torch.cuda.synchronize()
-            debug("🧹 GPU 메모리 정리 완료")
-    except Exception as e:
-        warning(f"⚠️ GPU 메모리 정리 중 오류: {e}")
+    # CPU-only 모드에서는 CUDA 관련 호출을 하지 않는다.
+    # (torch.cuda.* 호출 자체가 CUDA 드라이버 초기화를 유발할 수 있음)
+    return
 
 
 def _safe_ocr(img: Image.Image) -> str:
@@ -105,11 +99,9 @@ def _safe_ocr(img: Image.Image) -> str:
     try:
         global _easy_reader
         if _easy_reader is None:
-            gpu_available = torch.cuda.is_available()
-            # debug(f"GPU 사용 가능: {gpu_available}")
             _easy_reader = easyocr.Reader(
                 ["ko", "en"],
-                gpu=gpu_available,
+                gpu=False,
             )
             info("✅ EasyOCR 모델 초기화 완료")
 
@@ -145,48 +137,6 @@ def _to_data_url(image_bytes: bytes) -> str:
     }.get(ext.lower(), "image/png")
     b64 = base64.b64encode(image_bytes).decode("utf-8")
     return f"data:{mime};base64,{b64}"
-    
-    
-async def _ocr_with_chandra(image_bytes: bytes, timeout: float = 600) -> str:
-    """
-    이미지 1장을 Chandra-OCR(vLLM Vision)로 보내 '순수 텍스트'만 받아온다.
-    - 결과는 프롬프트에 붙일 OCR 텍스트로 사용.
-    """
-    CHANDRA_API_BASE = os.environ.get("CHANDRA_OCR_URL", "http://192.168.14.248:18000/v1")
-    CHANDRA_MODEL = "chandra"
-    data_url = _to_data_url(image_bytes)
-    prompt = (
-        "You are an OCR transcriber.\n"
-        "- Extract PLAIN TEXT ONLY from the document image.\n"
-        "- Keep reading order and line breaks.\n"
-        "- Do not add explanations, JSON, or markdown fences."
-    )
-    payload = {
-        "model": CHANDRA_MODEL,
-        "messages": [{
-            "role": "user",
-            "content": [
-                {"type": "text", "text": prompt},
-                {"type": "image_url", "image_url": {"url": data_url}},
-            ],
-        }],
-        "temperature": 0.0,
-        "max_tokens": 8192,
-        "seed": 42,
-    }
-    url = f"{CHANDRA_API_BASE}/chat/completions"
-
-    client = get_http_client(timeout=timeout)
-    r = await client.post(url, json=payload)
-    r.raise_for_status()
-    j = r.json()
-    text = (j.get("choices", [{}])[0].get("message", {}) or {}).get("content", "") or ""
-
-    # 가끔 ```로 감싸면 제거
-    t = text.strip()
-    if t.startswith("```"):
-        t = t.split("```", 2)[-1].strip()
-    return t
 
 
 def _decode_b64_image(b64: str) -> Image.Image:
@@ -196,46 +146,46 @@ def _decode_b64_image(b64: str) -> Image.Image:
     return img
 
 
-def inject_image_ocr(md: str) -> str:
-    """
-    base64 image to replace OCR text.
+# def inject_image_ocr(md: str) -> str:
+#     """
+#     base64 image to replace OCR text.
     
-    OOM 에러 발생 시 예외를 재발생시켜 상위 재시도 메커니즘이 작동하도록 함.
-    """
+#     OOM 에러 발생 시 예외를 재발생시켜 상위 재시도 메커니즘이 작동하도록 함.
+#     """
 
-    def repl(m: re.Match) -> str:
-        _ = m.group(1)  # alt_text (not used)
-        b64 = m.group(2)
-        # debug(f"base64 이미지 발견: {alt_text}, 데이터 길이: {len(b64)}")
-        img = _decode_b64_image(b64)
+#     def repl(m: re.Match) -> str:
+#         _ = m.group(1)  # alt_text (not used)
+#         b64 = m.group(2)
+#         # debug(f"base64 이미지 발견: {alt_text}, 데이터 길이: {len(b64)}")
+#         img = _decode_b64_image(b64)
         
-        # # === 이미지 저장 코드 추가 ===
-        # output_dir = "markdown_result/document_artifacts"
-        # os.makedirs(output_dir, exist_ok=True)
-        # timestamp = time.strftime("%Y%m%d_%H%M%S")
-        # img_filename = f"image_{timestamp}_{alt_text}.png"
-        # img_path = os.path.join(output_dir, img_filename)
-        # img.save(img_path)
-        # debug(f"이미지 저장 완료: {img_path}")
+#         # # === 이미지 저장 코드 추가 ===
+#         # output_dir = "markdown_result/document_artifacts"
+#         # os.makedirs(output_dir, exist_ok=True)
+#         # timestamp = time.strftime("%Y%m%d_%H%M%S")
+#         # img_filename = f"image_{timestamp}_{alt_text}.png"
+#         # img_path = os.path.join(output_dir, img_filename)
+#         # img.save(img_path)
+#         # debug(f"이미지 저장 완료: {img_path}")
         
-        # OCR (OOM 에러는 예외로 전파됨)
-        ocr = _safe_ocr(img)
-        debug(f"OCR 결과: '{ocr}'")
-        if ocr:
-            return f"\n{ocr}\n"
-        else:
-            return "\n"      
+#         # OCR (OOM 에러는 예외로 전파됨)
+#         ocr = _safe_ocr(img)
+#         debug(f"OCR 결과: '{ocr}'")
+#         if ocr:
+#             return f"\n{ocr}\n"
+#         else:
+#             return "\n"      
 
-    try:
-        return re.sub(BASE64_IMAGE_PATTERN, repl, md)
-    except Exception as e:
-        # OOM 에러인 경우 예외를 재발생시켜 상위 재시도 메커니즘이 작동하도록 함
-        if _is_oom_error(e):
-            warning(f"⚠️ inject_image_ocr에서 OOM 에러 발생: {e}")
-            raise
-        else:
-            # 일반 에러는 기존 마크다운 반환 (하위 호환성)
-            warning(f"⚠️ inject_image_ocr에서 일반 에러 발생: {e}")
-            return md
+#     try:
+#         return re.sub(BASE64_IMAGE_PATTERN, repl, md)
+#     except Exception as e:
+#         # OOM 에러인 경우 예외를 재발생시켜 상위 재시도 메커니즘이 작동하도록 함
+#         if _is_oom_error(e):
+#             warning(f"⚠️ inject_image_ocr에서 OOM 에러 발생: {e}")
+#             raise
+#         else:
+#             # 일반 에러는 기존 마크다운 반환 (하위 호환성)
+#             warning(f"⚠️ inject_image_ocr에서 일반 에러 발생: {e}")
+#             return md
 
 

@@ -1,30 +1,24 @@
 services:
   # API 서버 (test_resume 전용, RabbitMQ 없음)
   resume-api-hr:
-    # build: .
+    build: .
     image: oneresume-core:v1.0.0
     container_name: resume-api-hr
-    runtime: nvidia
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: 1
-              capabilities: [gpu]
+    # runtime: nvidia
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
     ports:
       - "8700:8000"
     restart: unless-stopped
     volumes:
       - ./artifacts:/home/appuser/.cache/docling/models
       - ./cache:/root/.cache/
-      - ./easyocr:/root/.EasyOCR/
-      - ./markdown_result:/app/markdown_result
-      - ./src:/app/src
-      - ./swagger_ui:/app/static
-      - ./requirements.txt:/app/requirements.txt
-      - ./images:/app/images
-      - ./debug_logs:/app/debug_logs
+      - ./cache/easyocr:/root/.EasyOCR
     env_file:
       - ./.env
     environment:

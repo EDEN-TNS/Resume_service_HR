@@ -8,11 +8,11 @@ from typing import Dict, Optional, Tuple
 import pdfplumber
 import pypdf
 from fastapi import UploadFile
-from PIL import Image
+# from PIL import Image
 
 from src.document_processing.detect_genre import detect_genre
 from src.document_processing.docling_processing import process_document
-from src.document_processing.ocr_processing import _safe_ocr, inject_image_ocr
+# from src.document_processing.ocr_processing import _safe_ocr
 from src.document_processing.remember_format import extract_remember
 from src.text_processing.text_preprocessing_eng import (
     extract_sections_journal_result,
@@ -124,7 +124,7 @@ class DocumentPreprocessor:
                 unencrypted_pdf_path, file.filename
             )
             
-            # 5. 텍스트 전처리(OCR)
+            # 5. 텍스트 전처리 (OCR은 _post_process_text 내부에서 선택적으로 스킵 가능)
             final_markdown, sections_journal_result = self._post_process_text(processed_markdown, genre, file.filename)
             
             return final_markdown, genre, remember_result, sections_journal_result
@@ -218,15 +218,19 @@ class DocumentPreprocessor:
                 genre = self._detect_genre(file_path)
                 info(f"📋 감지된 genre: {genre}")
                 
-                # Remember 형식 처리
-                if genre == "remember":
-                    remember_result = self._process_remember_format(file_path, filename)
-                    if remember_result and "image_paths" in remember_result:
-                        processed_markdown = self._process_remember_ocr(remember_result, filename)
-                        return processed_markdown, genre, remember_result
-                    else:
-                        warning("⚠️ OCR 텍스트 추출 실패")
-                        return "", genre, remember_result
+                # Remember 형식 처리 (현재 비활성화)
+                # - remember는 PDF -> 이미지 -> OCR(EasyOCR) 경로가 핵심이라,
+                #   이 분기를 끄면 remember 문서 입력 시 결과가 비거나 품질이 크게 저하될 수 있음.
+                #
+                # if genre == "remember":
+                #     remember_result = self._process_remember_format(file_path, filename)
+                #     if remember_result and "image_paths" in remember_result:
+                #         processed_markdown = self._process_remember_ocr(remember_result, filename)
+                #         return processed_markdown, genre, remember_result
+                #     else:
+                #         warning("⚠️ OCR 텍스트 추출 실패")
+                #         return "", genre, remember_result
+                pass
                 
             except Exception as api_error:
                 warning(f"⚠️ PDF 처리 실패, 기존 방식으로 진행: {str(api_error)}")
@@ -272,56 +276,56 @@ class DocumentPreprocessor:
             print(f"Remember 형식 처리 중 오류 발생: {str(e)}")
             raise
     
-    def _process_remember_ocr(self, remember_result: Dict, filename: str) -> str:
-        """Remember 형식의 이미지들을 OCR로 처리"""
-        info("📷 Remember 형식 감지됨, 이미지 OCR 처리 시작")
+    # def _process_remember_ocr(self, remember_result: Dict, filename: str) -> str:
+    #     """Remember 형식의 이미지들을 OCR로 처리"""
+    #     info("📷 Remember 형식 감지됨, 이미지 OCR 처리 시작")
         
-        text_with_ocr = ""
-        opened_images = []  # 열린 이미지 추적
+    #     text_with_ocr = ""
+    #     opened_images = []  # 열린 이미지 추적
         
-        try:
-            for image_path in remember_result["image_paths"]:
-                img = None
-                try:
-                    img = Image.open(image_path).convert("RGB")
-                    opened_images.append(img)  # 추적 목록에 추가
-                    ocr_text = _safe_ocr(img)
-                    if ocr_text:
-                        text_with_ocr += f"\n{ocr_text}\n"
-                        debug(f"✅ OCR 완료: {image_path}")
-                except Exception as e:
-                    # OOM 에러인지 확인 (ocr_processing의 _is_oom_error 사용)
-                    from src.document_processing.ocr_processing import _is_oom_error
-                    if _is_oom_error(e):
-                        # OOM 에러는 재발생시켜 상위 재시도 메커니즘이 작동하도록 함
-                        warning(f"⚠️ OCR OOM 에러 발생 {image_path}: {str(e)}")
-                        raise
-                    else:
-                        # 일반 에러는 로그만 출력하고 계속 진행
-                        warning(f"⚠️ OCR 실패 {image_path}: {str(e)}")
-                finally:
-                    # 이미지 파일 명시적으로 닫기 (삭제 시 파일 사용 중 오류 방지)
-                    if img is not None:
-                        try:
-                            img.close()
-                        except Exception:
-                            pass
-        finally:
-            # 모든 이미지가 닫혔는지 확인
-            for img in opened_images:
-                try:
-                    if hasattr(img, 'fp') and img.fp is not None:
-                        img.close()
-                except Exception:
-                    pass
-            debug("✅ OCR 처리 완료, 모든 이미지 파일 닫힘")
+    #     try:
+    #         for image_path in remember_result["image_paths"]:
+    #             img = None
+    #             try:
+    #                 img = Image.open(image_path).convert("RGB")
+    #                 opened_images.append(img)  # 추적 목록에 추가
+    #                 ocr_text = _safe_ocr(img)
+    #                 if ocr_text:
+    #                     text_with_ocr += f"\n{ocr_text}\n"
+    #                     debug(f"✅ OCR 완료: {image_path}")
+    #             except Exception as e:
+    #                 # OOM 에러인지 확인 (ocr_processing의 _is_oom_error 사용)
+    #                 from src.document_processing.ocr_processing import _is_oom_error
+    #                 if _is_oom_error(e):
+    #                     # OOM 에러는 재발생시켜 상위 재시도 메커니즘이 작동하도록 함
+    #                     warning(f"⚠️ OCR OOM 에러 발생 {image_path}: {str(e)}")
+    #                     raise
+    #                 else:
+    #                     # 일반 에러는 로그만 출력하고 계속 진행
+    #                     warning(f"⚠️ OCR 실패 {image_path}: {str(e)}")
+    #             finally:
+    #                 # 이미지 파일 명시적으로 닫기 (삭제 시 파일 사용 중 오류 방지)
+    #                 if img is not None:
+    #                     try:
+    #                         img.close()
+    #                     except Exception:
+    #                         pass
+    #     finally:
+    #         # 모든 이미지가 닫혔는지 확인
+    #         for img in opened_images:
+    #             try:
+    #                 if hasattr(img, 'fp') and img.fp is not None:
+    #                     img.close()
+    #             except Exception:
+    #                 pass
+    #         debug("✅ OCR 처리 완료, 모든 이미지 파일 닫힘")
         
-        # # 마크다운 파일로 저장
-        # if text_with_ocr:
-        #     save_markdown_result(text_with_ocr, filename, "_ocr")
-            # print(f"OCR 적용 후 마크다운 길이: {len(text_with_ocr)}")
+    #     # # 마크다운 파일로 저장
+    #     # if text_with_ocr:
+    #     #     save_markdown_result(text_with_ocr, filename, "_ocr")
+    #         # print(f"OCR 적용 후 마크다운 길이: {len(text_with_ocr)}")
         
-        return text_with_ocr
+    #     return text_with_ocr
     
     def _process_regular_document(self, file_path: str) -> str:
         """일반 문서 처리 (docling 사용)"""
@@ -439,13 +443,16 @@ class DocumentPreprocessor:
     
     def _post_process_text(self, markdown_text: str, genre: str, filename: str) -> str:
         """텍스트 후처리 (OCR 적용, 긴 문단 제거, 섹션 제거)"""
-        # OCR 적용
-        markdown_with_ocr = inject_image_ocr(markdown_text)
-        info("=== OCR 처리 완료 ===")
-        info(f"📊 OCR 적용 후 마크다운 길이: {len(markdown_with_ocr)}")
-        
-        # OCR 마크다운 저장
-        save_markdown_result(markdown_with_ocr, filename, "_with_ocr", "# OCR이 적용된 마크다운 결과\n\n")
+        # OCR 적용 (현재 비활성화)
+        # markdown_with_ocr = inject_image_ocr(markdown_text)
+        # info("=== OCR 처리 완료 ===")
+        # info(f"📊 OCR 적용 후 마크다운 길이: {len(markdown_with_ocr)}")
+        #
+        # # OCR 마크다운 저장
+        # save_markdown_result(markdown_with_ocr, filename, "_with_ocr", "# OCR이 적용된 마크다운 결과\n\n")
+        markdown_with_ocr = markdown_text
+        info("=== OCR 비활성화됨 ===")
+        info(f"📊 OCR 미적용 마크다운 길이: {len(markdown_with_ocr)}")
         
         # 긴 문단 제거
         format_type = "remember" if genre == "remember" else "default"

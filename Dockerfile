@@ -26,15 +26,18 @@ RUN printf '%s\n' \
 
 ENV LANG=ko_KR.UTF-8 LC_ALL=ko_KR.UTF-8
 
-# 앱 의존성/코드 (원본과 동일하게)
-COPY requirements.txt .
+# 앱 의존성 (캐시 효율 위해 먼저 복사)
+COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir --upgrade pip \
- && pip install --no-cache-dir -r requirements.txt
+ && pip install --no-cache-dir -r /app/requirements.txt
 
-COPY . .
+# 런타임에 필요한 것만 이미지에 포함 (비밀/캐시 제외)
+COPY pyproject.toml /app/pyproject.toml
+COPY src /app/src
+COPY swagger_ui /app/swagger_ui
 
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
   CMD curl -f http://localhost:8000/health || exit 1
 
-CMD ["python", "src/api/main.py"]
+CMD ["python", "-m", "src.api.main"]

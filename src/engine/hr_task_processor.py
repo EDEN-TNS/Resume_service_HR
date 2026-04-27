@@ -49,16 +49,8 @@ def is_oom_error(error: Exception) -> bool:
 
 
 def cleanup_gpu_memory() -> None:
-    try:
-        import torch  # type: ignore
-
-        if torch.cuda.is_available():
-            torch.cuda.empty_cache()
-            torch.cuda.synchronize()
-    except ImportError:
-        return
-    except Exception:
-        return
+    # CPU-only 모드: CUDA 관련 호출을 하지 않는다.
+    return
 
 
 async def retry_on_oom(
