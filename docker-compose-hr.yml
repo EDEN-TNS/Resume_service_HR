@@ -2,7 +2,7 @@ services:
   # API 서버 (test_resume 전용, RabbitMQ 없음)
   resume-api-hr:
     build: .
-    image: oneresume-core:v1.0.0
+    image: HR-resume-core:v1.0.0
     container_name: resume-api-hr
     # runtime: nvidia
     # deploy:
