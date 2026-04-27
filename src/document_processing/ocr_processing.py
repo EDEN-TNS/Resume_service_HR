@@ -3,10 +3,10 @@ import imghdr
 import io
 import warnings
 
+import easyocr
 import numpy as np
 from PIL import Image, ImageFile
 
-import easyocr
 from src.utils.global_logger import debug, info, warning
 
 # 손상된 이미지 파일도 로드할 수 있도록 설정
