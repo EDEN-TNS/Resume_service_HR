@@ -46,7 +46,9 @@ app = FastAPI(
     description="Minimal API exposing /test_resume only",
 )
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Docker 이미지에는 swagger 정적 파일이 /app/swagger_ui 로 복사된다.
+# 작업 디렉터리(/app) 기준 상대경로로 마운트한다.
+app.mount("/static", StaticFiles(directory="swagger_ui"), name="static")
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
     return get_swagger_ui_html(
