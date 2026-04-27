@@ -1,8 +1,6 @@
 import base64
 import imghdr
 import io
-import os
-import re
 import warnings
 
 import numpy as np

@@ -8,10 +8,11 @@ from typing import Dict, Optional, Tuple
 import pdfplumber
 import pypdf
 from fastapi import UploadFile
-# from PIL import Image
 
+# from PIL import Image
 from src.document_processing.detect_genre import detect_genre
 from src.document_processing.docling_processing import process_document
+
 # from src.document_processing.ocr_processing import _safe_ocr
 from src.document_processing.remember_format import extract_remember
 from src.text_processing.text_preprocessing_eng import (

@@ -5,6 +5,7 @@
 from .detect_genre import detect_genre
 from .docling_processing import process_document
 from .document_preprocessor import convert_doc_to_docx, preprocess_document, remove_pdf_password
+
 # from .ocr_processing import _safe_ocr, inject_image_ocr
 from .remember_format import extract_remember
 
