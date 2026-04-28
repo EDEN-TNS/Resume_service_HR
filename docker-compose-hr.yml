@@ -15,10 +15,10 @@ services:
     ports:
       - "8700:8000"
     restart: unless-stopped
-    # volumes:
-      # - ./artifacts:/home/appuser/.cache/docling/models
-      # - ./cache:/root/.cache/
-      # - ./cache/easyocr:/root/.EasyOCR
+    volumes:
+      - ./artifacts:/home/appuser/.cache/docling/models
+      - ./cache:/root/.cache/
+      - ./cache/easyocr:/root/.EasyOCR
     env_file:
       - ./.env
     environment:
