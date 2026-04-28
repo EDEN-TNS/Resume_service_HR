@@ -5,7 +5,6 @@ import json
 import os
 from typing import Any, Dict, List
 
-import httpx
 from PIL import Image
 
 from src.document_processing.ocr_processing import _safe_ocr
